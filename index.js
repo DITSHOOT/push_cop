@@ -74,7 +74,7 @@ bot.on('messageCreate', (message) => {
   const weekDays = [1, 2, 3, 4, 5].includes(now.getDay());
 
   // Vérifiez si l'heure est entre 8h et 17h
-  const workingHours = now.getHours() >= 8 && now.getHours() < 22;
+  const workingHours = now.getHours() >= 8 && now.getHours() < 17;
   
   // Sélectionnez un message aléatoire parmi la liste
   const randomMessage = messagesaupiff[Math.floor(Math.random() * messagesaupiff.length)];
