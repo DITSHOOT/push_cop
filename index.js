@@ -60,6 +60,9 @@ const messagesaupiff = [
   "Désolé, mais si tu n'utilises pas Git, tu as tort. Comme je l'ai dit un jour, utilise tes 2 mains, ça ira plus vite. Cela n'a aucun sens ? Je sais. Mais tu sais ce qui a aucun sens babouin pousse cassette ? Tu es atteint d'une logorrhée et à ton âge c'est grave. C'est une diarrhée verbale ! Pour y remédier, oublie pas de pousser toutes les 2 heures !",
 ];
 
+let sendEmbed = true; // Variable pour activer/désactiver l'envoi de l'embed
+let reminderInterval; // Variable pour stocker l'identifiant de l'intervalle
+
 bot.on('messageCreate', async (message) => {
   const channel = bot.channels.cache.get('1151478201823023214');
 
