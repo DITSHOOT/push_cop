@@ -66,7 +66,7 @@ bot.on('messageCreate', (message) => {
   }
 
   if ([1, 2, 3, 4, 5].includes(now.getDay()) && sendEmbed) {
-    const specifiedHours = [10, 12, 14, 16].includes(now.getHours());
+    const specifiedHours = [10, 12, 15, 17].includes(now.getHours());
 
     if (specifiedHours && lastHour !== now.getHours()) {
       sendReminder(channel, now);
