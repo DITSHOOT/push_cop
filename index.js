@@ -60,55 +60,47 @@ const messagesaupiff = [
   "Désolé, mais si tu n'utilises pas Git, tu as tort. Comme je l'ai dit un jour, utilise tes 2 mains, ça ira plus vite. Cela n'a aucun sens ? Je sais. Mais tu sais ce qui a aucun sens babouin pousse cassette ? Tu es atteint d'une logorrhée et à ton âge c'est grave. C'est une diarrhée verbale ! Pour y remédier, oublie pas de pousser toutes les 2 heures !",
 ];
 
-let sendEmbed = true; // Variable pour activer/désactiver l'envoi de l'embed
-let reminderInterval; // Variable pour stocker l'identifiant de l'intervalle
-
-bot.on('messageCreate', (message) => {
+bot.on('messageCreate', async (message) => {
   const channel = bot.channels.cache.get('1151478201823023214');
 
-  // Obtenez la date et l'heure actuelles
-  const now = new Date();
+  // Obtenez la date et l'heure actuelles en respectant le fuseau horaire français (UTC+1)
+  const now = new Date(new Date().toLocaleString("fr-FR", {timeZone: "Europe/Paris"}));
 
   // Vérifiez si le jour est un lundi, mardi, mercredi, jeudi ou vendredi
   const weekDays = [1, 2, 3, 4, 5].includes(now.getDay());
 
-  // Vérifiez si l'heure est entre 8h et 17h
-  const workingHours = now.getHours() >= 8 && now.getHours() < 17;
-  
-  // Sélectionnez un message aléatoire parmi la liste
-  const randomMessage = messagesaupiff[Math.floor(Math.random() * messagesaupiff.length)];
+  // Vérifiez si l'heure est parmi les heures spécifiées (10h, 12h, 14h, 16h)
+  const specifiedHours = [10, 12, 14, 16].includes(now.getHours());
 
-  // Si c'est un jour de semaine, dans les heures de travail et le nombre de semaines écoulées est pair, envoyez le message
-  if (weekDays && workingHours && sendEmbed && !reminderInterval) {
+  // Si c'est un jour de semaine, à l'heure spécifiée et le rappel n'a pas été envoyé, envoyez le message
+  if (weekDays && specifiedHours && sendEmbed && !reminderInterval) {
 
-    // Démarrez un intervalle qui se répète toutes les 10 secondes
-    reminderInterval = setInterval(async () => {
+    // Sélectionnez un message aléatoire parmi la liste
+    const randomMessage = messagesaupiff[Math.floor(Math.random() * messagesaupiff.length)];
 
-      // Créez un nouvel embed avec le message sélectionné
-      const embedMessage = new Discord.EmbedBuilder()
-        .setColor('#3498db')
-        .setTitle('<a:rappel:1185911636565954620> Rappel Quotidien <a:rappel:1185911636565954620>')
-        .setDescription(randomMessage)
-        .setAuthor({
-          name: `${bot.user.username}`,
-          iconURL: `${bot.user.displayAvatarURL()}`
-        })  
-        .setFooter({
-          text: `${message.guild.name} - ${new Date().toLocaleString()}`,
-          iconURL: message.guild.iconURL({ dynamic: true, format: 'png', size: 1024 })
-        });
+    // Créez un nouvel embed avec le message sélectionné
+    const embedMessage = new Discord.MessageEmbed()
+      .setColor('#3498db')
+      .setTitle('<a:rappel:1185911636565954620> Rappel Quotidien <a:rappel:1185911636565954620>')
+      .setDescription(randomMessage)
+      .setAuthor({
+        name: `${bot.user.username}`,
+        iconURL: `${bot.user.displayAvatarURL()}`
+      })  
+      .setFooter({
+        text: `${message.guild.name} - ${now.toLocaleString("fr-FR")}`, // Utilisez le format de date français
+        iconURL: message.guild.iconURL({ dynamic: true, format: 'png', size: 1024 })
+      });
 
-      // Envoyez l'embed dans le canal spécifié
-      await channel.send({ embeds: [embedMessage] });
-      channel.send('@everyone');
+    // Envoyez l'embed dans le canal spécifié
+    await channel.send({ embeds: [embedMessage] });
+    channel.send('<@&1192744421201035374>');
 
-      console.log(`Rappel quotidien envoyé à ` + now);
-    }, 10000); // 10 secondes
+    console.log(`Rappel quotidien envoyé à ` + now);
   }
 });
 
 // Commande pour désactiver l'envoi de l'embed
-
 bot.on('messageCreate', (message) => {
   if (message.content.startsWith(config.prefix + "status")) {
     sendEmbed = !sendEmbed;
@@ -120,7 +112,7 @@ bot.on('messageCreate', (message) => {
     }
 
     message.channel.send(`L'envoi de l'embed est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
-    console.log(`Le status de la commande est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
+    console.log(`Le statut de la commande est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
   }
 });
 
