@@ -5,7 +5,20 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Faire un facemath de citation (tournoi) || votez la meilleur citation, un 1vs1
+const rolesDataFile = 'rolesData.json';
+let rolesData = {};
+
+// Charge les données à partir du fichier, s'il existe
+try {
+  rolesData = require(`./${rolesDataFile}`);
+} catch (error) {
+  console.error(`Erreur lors de la lecture du fichier ${rolesDataFile}:`, error);
+}
+
+// Fonction pour sauvegarder les données dans le fichier
+function saveRolesData() {
+  fs.writeFileSync(rolesDataFile, JSON.stringify(rolesData, null, 2), 'utf-8');
+}
 
 bot.login(process.env.TOKEN)
 
@@ -116,18 +129,17 @@ function sendReminder(channel, now) {
     });
 
   channel.send({ embeds: [embedMessage] });
-  channel.send('<@&1192744421201035374>');
+  channel.send(`${mentionnedrole}`);
 
   lastHour = now.getHours();
   console.log(`Rappel quotidien envoyé à ` + now);
 }
 
 
-const roleId = '1192744421201035374'; // Remplacez par l'ID du rôle en questiiiooonnn
-const mentionnedrole = "<@&1192744421201035374>"; // idem mais c'est le ping
-const addEmoji = '✅'; // Emoji pour ajouter le rôle
-const removeEmoji = '❌'; // Emoji pour retirer le rôle
-
+const roleId = '1192744421201035374';
+const addEmoji = '✅';
+const removeEmoji = '❌';
+const reactionsData = {}; // Variable pour stocker les données des réactions
 
 bot.on('messageCreate', async (message) => {
   if (message.content.startsWith(config.prefix + "addrole") && message.guild && !message.author.bot) {
@@ -140,8 +152,13 @@ bot.on('messageCreate', async (message) => {
       description: `Clique sur ${addEmoji} pour ajouter le rôle\n Clique sur ${removeEmoji} pour retirer le rôle.\n\n**Rôle** : ${mentionedRole.name}\n\n(*tu peux le retirer ou l'ajouter à tout moment*)`,
     };
 
-    const embedMessageObject = await message.channel.send({ embeds: [embedMessage] });
-    message.channel.send(`@everyone`)
+    // Récupère le message stocké ou envoie un nouveau message
+    const storedMessage = reactionsData[message.channel.id];
+    const embedMessageObject = storedMessage ? await message.channel.messages.fetch(storedMessage) : await message.channel.send({ embeds: [embedMessage] });
+
+    // Enregistre le nouveau message dans les données des réactions
+    reactionsData[message.channel.id] = embedMessageObject.id;
+
     await embedMessageObject.react(addEmoji);
     await embedMessageObject.react(removeEmoji);
 
@@ -149,61 +166,37 @@ bot.on('messageCreate', async (message) => {
     const collector = embedMessageObject.createReactionCollector({ filter });
 
     collector.on('collect', async (reaction) => {
-      // Obtient l'objet du membre qui a envoyé le message original
       const member = message.guild.members.cache.get(message.author.id);
-    
-      // Filtre les utilisateurs qui ont réagi pour obtenir le premier utilisateur non-bot (et oui sinon ça sert à rien mdr)
       const reactingUser = reaction.users.cache.filter(user => !user.bot).first();
-    
-      // Vérifie si la réaction est pour ajouter le rôle
+
       if (reaction.emoji.name === addEmoji) {
-        // Ajoute le rôle au membre
         member.roles.add(roleId);
-    
-        // Vérifie si un utilisateur non-bot a réagi
-        if (reactingUser) {
-          // Affiche un message dans la console indiquant le rôle ajouté et l'utilisateur
-          console.log(`Le rôle ${mentionedRole.name} a été ajouté à ${reactingUser.username}`);
-    
-          // Envoie un message dans le canal indiquant le succès
-          const replyMessage = await message.channel.send(`${reactingUser.toString()}, Le rôle **${mentionedRole.name}** vous a été ajouté avec succès.`);
-          
-          // Supprime le message après 5 secondes
-          setTimeout(() => {
-            replyMessage.delete().catch(console.error);
-          }, 5000);
-        } else {
-          // Si aucun utilisateur non-bot n'a réagi, affiche un message dans la console
-          console.log(`Le rôle ${mentionedRole.name} a été ajouté.`);
-        }
+        handleReaction(message, mentionedRole, reactingUser, true);
       } else if (reaction.emoji.name === removeEmoji) {
-        // Retire le rôle du membre
         member.roles.remove(roleId);
-    
-        // Vérifie si un utilisateur non-bot a réagi
-        if (reactingUser) {
-          // Affiche un message dans la console indiquant le rôle retiré et l'utilisateur
-          console.log(`Le rôle ${mentionedRole.name} a été retiré à ${reactingUser.username}`);
-    
-          // Envoie un message dans le canal indiquant le succès
-          const replyMessage = await message.channel.send(`${reactingUser.toString()}, Le rôle **${mentionedRole.name}** vous a été retiré avec succès.`);
-          
-          // Supprime le message après 5 secondes
-          setTimeout(() => {
-            replyMessage.delete().catch(console.error); // au cas ou si ça trop vite 
-          }, 5000);
-        } else {
-          // Si aucun utilisateur non-bot n'a réagi, affiche un message dans la console
-          console.log(`Le rôle ${mentionedRole.name} a été retiré.`);
-        }
+        handleReaction(message, mentionedRole, reactingUser, false);
       }
-    
-      // Retire la réaction de l'auteur du message original
+
       await reaction.users.remove(message.author.id);
     });
-    
   }
 });
+
+// Fonction pour gérer la réaction
+async function handleReaction(message, mentionedRole, reactingUser, isAdd) {
+  if (reactingUser) {
+    const action = isAdd ? 'ajouté' : 'retiré';
+    console.log(`Le rôle ${mentionedRole.name} a été ${action} à ${reactingUser.username}`);
+    const replyMessage = await message.channel.send(`${reactingUser.toString()}, Le rôle **${mentionedRole.name}** vous a été ${action} avec succès.`);
+
+    setTimeout(() => {
+      replyMessage.delete().catch(console.error);
+    }, 5000);
+  } else {
+    const action = isAdd ? 'ajouté' : 'retiré';
+    console.log(`Le rôle ${mentionedRole.name} a été ${action}.`);
+  }
+}
 
 
 
