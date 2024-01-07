@@ -117,96 +117,27 @@ function sendReminder(channel, now) {
   channel.send({ embeds: [embedMessage] });
   channel.send('<@&1192744421201035374>');
 
-  lastHour = now.getHours();
-  console.log(`Rappel quotidien envoyé à ` + now);
-}
-
-  
-
-
-const roleId = '1192744421201035374'; // Remplacez par l'ID du rôle en questiiiooonnn
-const mentionnedrole = "<@&1192744421201035374>"; // idem mais c'est le ping
-const addEmoji = '✅'; // Emoji pour ajouter le rôle
-const removeEmoji = '❌'; // Emoji pour retirer le rôle
-
-
-bot.on('messageCreate', async (message) => {
-  if (message.content.startsWith(config.prefix + "addrole") && message.guild && !message.author.bot) {
-    message.delete();
-    const mentionedRole = await message.guild.roles.fetch(roleId).catch(console.error);
-
-    const embedMessage = {
-      color: 0xF3AD53,
-      title: `Ajout de rôle ${mentionedRole.name}`,
-      description: `Clique sur ${addEmoji} pour ajouter le rôle\n Clique sur ${removeEmoji} pour retirer le rôle.\n\n**Rôle** : ${mentionedRole.name}\n\n(*tu peux le retirer ou l'ajouter à tout moment*)`,
-    };
-
-    const embedMessageObject = await message.channel.send({ embeds: [embedMessage] });
-    message.channel.send(`@everyone`)
-    await embedMessageObject.react(addEmoji);
-    await embedMessageObject.react(removeEmoji);
-
-    const filter = (reaction, user) => [addEmoji, removeEmoji].includes(reaction.emoji.name) && user.id === message.author.id;
-    const collector = embedMessageObject.createReactionCollector({ filter });
-
-    collector.on('collect', async (reaction) => {
-      // Obtient l'objet du membre qui a envoyé le message original
-      const member = message.guild.members.cache.get(message.author.id);
-    
-      // Filtre les utilisateurs qui ont réagi pour obtenir le premier utilisateur non-bot (et oui sinon ça sert à rien mdr)
-      const reactingUser = reaction.users.cache.filter(user => !user.bot).first();
-    
-      // Vérifie si la réaction est pour ajouter le rôle
-      if (reaction.emoji.name === addEmoji) {
-        // Ajoute le rôle au membre
-        member.roles.add(roleId);
-    
-        // Vérifie si un utilisateur non-bot a réagi
-        if (reactingUser) {
-          // Affiche un message dans la console indiquant le rôle ajouté et l'utilisateur
-          console.log(`Le rôle ${mentionedRole.name} a été ajouté à ${reactingUser.username}`);
-    
-          // Envoie un message dans le canal indiquant le succès
-          const replyMessage = await message.channel.send(`${reactingUser.toString()}, Le rôle **${mentionedRole.name}** vous a été ajouté avec succès.`);
-          
-          // Supprime le message après 5 secondes
-          setTimeout(() => {
-            replyMessage.delete().catch(console.error);
-          }, 5000);
-        } else {
-          // Si aucun utilisateur non-bot n'a réagi, affiche un message dans la console
-          console.log(`Le rôle ${mentionedRole.name} a été ajouté.`);
-        }
-      } else if (reaction.emoji.name === removeEmoji) {
-        // Retire le rôle du membre
-        member.roles.remove(roleId);
-    
-        // Vérifie si un utilisateur non-bot a réagi
-        if (reactingUser) {
-          // Affiche un message dans la console indiquant le rôle retiré et l'utilisateur
-          console.log(`Le rôle ${mentionedRole.name} a été retiré à ${reactingUser.username}`);
-    
-          // Envoie un message dans le canal indiquant le succès
-          const replyMessage = await message.channel.send(`${reactingUser.toString()}, Le rôle **${mentionedRole.name}** vous a été retiré avec succès.`);
-          
-          // Supprime le message après 5 secondes
-          setTimeout(() => {
-            replyMessage.delete().catch(console.error); // au cas ou si ça trop vite 
-          }, 5000);
-        } else {
-          // Si aucun utilisateur non-bot n'a réagi, affiche un message dans la console
-          console.log(`Le rôle ${mentionedRole.name} a été retiré.`);
-        }
-      }
-    
-      // Retire la réaction de l'auteur du message original
-      await reaction.users.remove(message.author.id);
-    });
-    
+      console.log(`Rappel quotidien envoyé à ` + now);
+    }, 10000); // 10 secondes
   }
 });
 
+// Commande pour désactiver l'envoi de l'embed
 
+bot.on('messageCreate', (message) => {
+  if (message.content.startsWith(config.prefix + "status")) {
+    sendEmbed = !sendEmbed;
+
+    // Arrêtez l'intervalle si l'envoi est désactivé
+    if (!sendEmbed && reminderInterval) {
+      clearInterval(reminderInterval);
+      reminderInterval = null; // réinitialise, remet le compteur à zéro
+    }
+
+    message.channel.send(`L'envoi de l'embed est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
+    console.log(`Le status de la commande est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
+  }
+});
 
 
 bot.on('messageCreate', (message) => {
