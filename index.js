@@ -122,10 +122,19 @@ function sendReminder(channel, now) {
 }
 
 
+const fs = require('fs');
 const roleId = '1192744421201035374';
 const addEmoji = '✅';
 const removeEmoji = '❌';
-const reactionsData = {}; // Variable pour stocker les données des réactions
+const reactionsFile = './reactionsData.json';
+
+// Charge les données des réactions à partir du fichier JSON
+let reactionsData = {};
+try {
+  reactionsData = JSON.parse(fs.readFileSync(reactionsFile, 'utf8'));
+} catch (err) {
+  console.error('Erreur lors du chargement des données des réactions :', err);
+}
 
 bot.on('messageCreate', async (message) => {
   if (message.content.startsWith(config.prefix + "addrole") && message.guild && !message.author.bot) {
@@ -139,8 +148,8 @@ bot.on('messageCreate', async (message) => {
     };
 
     // Récupère le message stocké ou envoie un nouveau message
-    const storedMessage = reactionsData[message.channel.id];
-    const embedMessageObject = storedMessage ? await message.channel.messages.fetch(storedMessage) : await message.channel.send({ embeds: [embedMessage] });
+    const storedMessageId = reactionsData[message.channel.id];
+    const embedMessageObject = storedMessageId ? await message.channel.messages.fetch(storedMessageId) : await message.channel.send({ embeds: [embedMessage] });
 
     // Enregistre le nouveau message dans les données des réactions
     reactionsData[message.channel.id] = embedMessageObject.id;
@@ -165,6 +174,9 @@ bot.on('messageCreate', async (message) => {
 
       await reaction.users.remove(message.author.id);
     });
+
+    // Sauvegarde les données des réactions dans le fichier JSON
+    saveReactionsData();
   }
 });
 
@@ -184,6 +196,16 @@ async function handleReaction(message, mentionedRole, reactingUser, isAdd) {
   }
 }
 
+// Fonction pour sauvegarder les données des réactions dans le fichier JSON
+function saveReactionsData() {
+  fs.writeFile(reactionsFile, JSON.stringify(reactionsData, null, 2), (err) => {
+    if (err) {
+      console.error('Erreur lors de la sauvegarde des données des réactions :', err);
+    } else {
+      console.log('Données des réactions sauvegardées avec succès.');
+    }
+  });
+}
 
 
 
