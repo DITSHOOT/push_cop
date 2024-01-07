@@ -5,20 +5,6 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const rolesDataFile = 'rolesData.json';
-let rolesData = {};
-
-// Charge les données à partir du fichier, s'il existe
-try {
-  rolesData = require(`./${rolesDataFile}`);
-} catch (error) {
-  console.error(`Erreur lors de la lecture du fichier ${rolesDataFile}:`, error);
-}
-
-// Fonction pour sauvegarder les données dans le fichier
-function saveRolesData() {
-  fs.writeFileSync(rolesDataFile, JSON.stringify(rolesData, null, 2), 'utf-8');
-}
 
 bot.login(process.env.TOKEN)
 
