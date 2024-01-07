@@ -141,24 +141,30 @@ bot.on('messageCreate', async (message) => {
     message.delete();
     const mentionedRole = await message.guild.roles.fetch(roleId).catch(console.error);
 
-    const embedMessage = {
-      color: 0xF3AD53,
-      title: `Ajout de rôle ${mentionedRole.name}`,
-      description: `Clique sur ${addEmoji} pour ajouter le rôle\n Clique sur ${removeEmoji} pour retirer le rôle.\n\n**Rôle** : ${mentionedRole.name}\n\n(*tu peux le retirer ou l'ajouter à tout moment*)`,
-    };
+    const channelId = message.channel.id;
+    let messageId = reactionsData[channelId];
 
-    // Récupère le message stocké ou envoie un nouveau message
-    const storedMessageId = reactionsData[message.channel.id];
-    const embedMessageObject = storedMessageId ? await message.channel.messages.fetch(storedMessageId) : await message.channel.send({ embeds: [embedMessage] });
+    // Vérifie si le salon a déjà un message avec réactions
+    if (!messageId) {
+      // S'il n'y en a pas, envoie un nouveau message
+      const embedMessage = {
+        color: 0xF3AD53,
+        title: `Ajout de rôle ${mentionedRole.name}`,
+        description: `Clique sur ${addEmoji} pour ajouter le rôle\n Clique sur ${removeEmoji} pour retirer le rôle.\n\n**Rôle** : ${mentionedRole.name}\n\n(*tu peux le retirer ou l'ajouter à tout moment*)`,
+      };
 
-    // Enregistre le nouveau message dans les données des réactions
-    reactionsData[message.channel.id] = embedMessageObject.id;
+      const embedMessageObject = await message.channel.send({ embeds: [embedMessage] });
 
-    await embedMessageObject.react(addEmoji);
-    await embedMessageObject.react(removeEmoji);
+      messageId = embedMessageObject.id;
+      reactionsData[channelId] = messageId;
+
+      await embedMessageObject.react(addEmoji);
+      await embedMessageObject.react(removeEmoji);
+    }
 
     const filter = (reaction, user) => [addEmoji, removeEmoji].includes(reaction.emoji.name) && user.id === message.author.id;
-    const collector = embedMessageObject.createReactionCollector({ filter });
+    const collector = bot.channels.cache.get(channelId).messages.fetch(messageId)
+      .then((msg) => msg.createReactionCollector({ filter }));
 
     collector.on('collect', async (reaction) => {
       const member = message.guild.members.cache.get(message.author.id);
@@ -206,6 +212,7 @@ function saveReactionsData() {
     }
   });
 }
+
 
 
 

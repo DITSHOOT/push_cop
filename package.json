@@ -1,7 +1,8 @@
 {
   "dependencies": {
     "discord.js": "^14.14.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security"
   },
   "name": "push_cop",
   "description": "",
