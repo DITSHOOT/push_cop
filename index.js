@@ -65,7 +65,8 @@ bot.on('messageCreate', (message) => {
     sendReminder(channel, now);
   }
 
-  if ([1, 2, 3, 4, 5].includes(now.getDay()) && sendEmbed) {
+  if ([1, 2, 3, 4, 5].includes(now.getDay()) && sendEmbed && now.getDay() !== 0 && now.getDay() !== 6) {
+    // Correction GPT3 : le rappel ne sera envoyé que si le jour de la semaine est du lundi au vendredi, sendEmbed est activé, et le jour actuel n'est ni samedi (0) ni dimanche (6). Cela devrait résoudre le problème que vous avez rencontré.
     const specifiedHours = [10, 12, 15, 17].includes(now.getHours());
 
     if (specifiedHours && lastHour !== now.getHours()) {
