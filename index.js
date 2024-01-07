@@ -1,67 +1,44 @@
-const Discord  = require("discord.js")
-const bot = new Discord.Client({intents: 3276799})
-const config = require('./config')
+const Discord = require("discord.js");
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const config = require('./config');
 
-// Faire un facemath de citation (tournoi) || votez la meilleur citation, un 1vs1
+const bot = new Discord.Client({ intents: 3276799 });
+let sendEmbed = true; // Variable pour activer/désactiver l'envoi de l'embed
+let reminderInterval = null; // Variable pour stocker l'identifiant de l'intervalle
 
-bot.login(process.env.TOKEN)
-
+bot.login(process.env.TOKEN);
 
 app.listen(PORT, () => {
   console.log(`Le bot est en cours de lancement sur le port ${PORT}`);
 });
 
-
-
 bot.on('ready', () => {
-  
   const channel = bot.channels.cache.get('1163902591768477776');
   if (!channel) return console.error('Le salon spécifié est introuvable.');
+  
   channel.send('Le bot est maintenant connecté ! <@510818650307952640>');
-    console.log(`Connecté en tant que ${bot.user.tag}`);
+  console.log(`Connecté en tant que ${bot.user.tag}`);
 
-    
+  const status = [
+    { name: 'je ne comprends pas ta question', type: Discord.ActivityType.Listening },
+    { name: 'désolé, mais tu as tort', type: Discord.ActivityType.Watching },
+    { name: "'n'hésitez pas à me solliciter !", type: Discord.ActivityType.Playing },
+  ];
 
-    let status = [
-      {
-        name: 'je ne comprends pas ta question',
-        type: Discord.ActivityType.Listening,
-      },
-      {
-        name: 'désolé, mais tu as tort',
-        type: Discord.ActivityType.Watching,
-      },
-      {
-        name: "'n'hésitez pas à me solliciters !",
-        type: Discord.ActivityType.Playing,
-      },
-    
-      
-    ]
-    
-  setInterval(() =>{
+  setInterval(() => {
     let random = Math.floor(Math.random() * status.length);
     bot.user.setActivity(status[random]);
-  },3600000);
-  
+  }, 3600000);
 });
-
-
-let sendEmbed = true; // Variable pour activer/désactiver l'envoi de l'embed
-let lastHour; // Variable pour stocker la dernière heure à laquelle le rappel a été envoyé
 
 bot.on('messageCreate', (message) => {
   const channel = bot.channels.cache.get('1151478201823023214');
-
-  // Obtenez la date et l'heure actuelles en respectant le fuseau horaire français (UTC+1)
-  const now = new Date(new Date().toLocaleString("fr-FR", {timeZone: "Europe/Paris"}));
+  const now = new Date(new Date().toLocaleString("fr-FR", { timeZone: "Europe/Paris" }));
 
   if (message.content.startsWith(config.prefix + "pushgit") && message.guild && !message.author.bot) {
     message.delete();
-    // Commande manuelle pour envoyer l'embed
     sendReminder(channel, now);
   }
 
@@ -78,7 +55,6 @@ bot.on('messageCreate', (message) => {
   if (message.content.startsWith(config.prefix + "status")) {
     sendEmbed = !sendEmbed;
     lastHour = null;
-
     message.channel.send(`L'envoi de l'embed est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
     console.log(`Le statut de la commande est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
   }
@@ -99,9 +75,10 @@ function sendReminder(channel, now) {
     "Désolé, mais si tu n'utilises pas Git, tu as tort. Comme je l'ai dit un jour, utilise tes 2 mains, ça ira plus vite. Cela n'a aucun sens ? Je sais. Mais tu sais ce qui a aucun sens babouin pousse cassette ? Tu es atteint d'une logorrhée et à ton âge c'est grave. C'est une diarrhée verbale ! Pour y remédier, oublie pas de pousser toutes les 2 heures !",
   ]; // Remplacez cela par votre liste de messages
 
+
   const randomMessage = messagesaupiff[Math.floor(Math.random() * messagesaupiff.length)];
 
-  const embedMessage = new Discord.EmbedBuilder()
+  const embedMessage = new Discord.MessageEmbed()
     .setColor('#3498db')
     .setTitle(`<a:rappel:1185911636565954620> Rappel Quotidien à ${now.getHours()}h ! <a:rappel:1185911636565954620>`)
     .setDescription(randomMessage)
@@ -117,72 +94,49 @@ function sendReminder(channel, now) {
   channel.send({ embeds: [embedMessage] });
   channel.send('<@&1192744421201035374>');
 
-      console.log(`Rappel quotidien envoyé à ` + now);
-    }, 10000); // 10 secondes
-  }
-});
-
-// Commande pour désactiver l'envoi de l'embed
+  console.log(`Rappel quotidien envoyé à ` + now);
+}
 
 bot.on('messageCreate', (message) => {
   if (message.content.startsWith(config.prefix + "status")) {
     sendEmbed = !sendEmbed;
 
-    // Arrêtez l'intervalle si l'envoi est désactivé
     if (!sendEmbed && reminderInterval) {
       clearInterval(reminderInterval);
-      reminderInterval = null; // réinitialise, remet le compteur à zéro
+      reminderInterval = null;
     }
 
     message.channel.send(`L'envoi de l'embed est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
-    console.log(`Le status de la commande est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
+    console.log(`Le statut de la commande est maintenant ${sendEmbed ? 'activé' : 'désactivé'}.`);
   }
 });
 
-
 bot.on('messageCreate', (message) => {
-  if (message.author.bot) return; // Ne répondez pas aux messages des bots
-  if (!message.content.startsWith(config.prefix)) return; // Vérifiez s'il commence par le préfixe
+  if (message.author.bot) return;
+  if (!message.content.startsWith(config.prefix)) return;
 
   const args = message.content.slice(config.prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
 
-  if (command === 'say') {
-    // Vérifiez si l'utilisateur est un administrateur
-    if (!message.member.permissions.has('ADMINISTRATOR')) {
-      return message.reply('Seuls les administrateurs sont autorisés à utiliser cette commande.');
-    } 
-
-    // Récupère le message de l'utilisateur, en excluant le préfixe
+  if (command === 'say' && message.member.permissions.has('ADMINISTRATOR')) {
     const userMessage = args.join(' ');
+
     if (!userMessage) {
       return message.channel.send('Veuillez écrire un message.');
     }
 
-    // Supprime la commande de l'utilisateur
     message.delete();
-  
-    // Envoie le message personnalisé de l'utilisateur
     message.channel.send(userMessage);
   }
 });
 
-
 bot.on('messageCreate', (message) => {
   if (message.content === '!ping') {
-    const embed = new Discord.EmbedBuilder()
+    const embed = new Discord.MessageEmbed()
       .setTitle('Ping')
       .setDescription('Pong!')
       .setColor('#0099ff');
 
     message.channel.send({ embeds: [embed] });
   }
-
-    
 });
-
-
-
-// Au lieu d'utiliser setTimeout, j'utilise setInterval. setInterval permet d'exécuter une fonction à intervalles réguliers, tandis que setTimeout ne l'exécute qu'une seule fois (évite l'envoi de plein de message à la foi). Cela permet d'éviter de réinitialiser la temporisation à chaque message créé.
-
-// Stockage de l'identifiant de l'intervalle : J'ai ajouté une variable reminderInterval pour stocker l'identifiant de l'intervalle créé par setInterval. Cela nous permet de le manipuler plus tard, notamment pour l'arrêter lorsque l'envoi de l'embed est désactivé.
