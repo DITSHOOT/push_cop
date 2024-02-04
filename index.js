@@ -34,7 +34,7 @@ bot.on('ready', () => {
         type: Discord.ActivityType.Watching,
       },
       {
-        name: "'n'hésitez pas à me solliciters !",
+        name: "n'hésitez pas à me solliciters !",
         type: Discord.ActivityType.Playing,
       },
     
