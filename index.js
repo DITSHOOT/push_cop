@@ -58,10 +58,8 @@ bot.on('messageCreate', (message) => {
   const command = args.shift().toLowerCase();
 
   if (command === 'say') {
-    // Vérifiez si l'utilisateur est un administrateur
-    if (!message.member.permissions.has('ADMINISTRATOR')) {
-      return message.reply('Seuls les administrateurs sont autorisés à utiliser cette commande.');
-    } 
+    // Supprime la commande de l'utilisateur
+    message.delete();
 
     // Récupère le message de l'utilisateur, en excluant le préfixe
     const userMessage = args.join(' ');
@@ -69,13 +67,11 @@ bot.on('messageCreate', (message) => {
       return message.channel.send('Veuillez écrire un message.');
     }
 
-    // Supprime la commande de l'utilisateur
-    message.delete();
-  
     // Envoie le message personnalisé de l'utilisateur
     message.channel.send(userMessage);
   }
 });
+
 
 
 bot.on('messageCreate', (message) => {
